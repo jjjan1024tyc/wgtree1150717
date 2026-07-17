@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>吳剛伐木</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Microsoft JhengHei', sans-serif; 
+            text-align: center; 
+            /* 更換為較亮的藍色背景 */
+            background-color: #46739B;            
+            color: #f8fafc;
+            margin: 0; 
+            padding: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 98vh; 
+            overflow-x: hidden; 
+        }
+        
+        .header-container { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 10px 0 20px 0; }
+        h1 { color: #facc15; margin: 0; font-size: 80px; text-shadow: 0 0 20px rgba(250, 204, 21, 0.5); }
+        .header-icon { height: 80px; object-fit: contain; }
+
+        #topControls { background-color: rgba(30, 41, 59, 0.8); padding: 10px 20px; border-radius: 10px; margin-bottom: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; border: 1px solid #334155; }
+        .control-label { font-weight: bold; color: #fcd34d; font-size: 18px; }
+        
+        .mode-btn { background-color: #475569; color: white; padding: 10px 20px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .mode-btn:hover { background-color: #64748b; transform: translateY(-2px); }
+        .mode-btn.active { background-color: #3b82f6; cursor: default; transform: translateY(2px); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        
+        #restartBtn { background-color: #eab308; color: #1e293b; padding: 10px 20px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-left: 20px; }
+        #restartBtn:hover { background-color: #ca8a04; color: white; }
+
+        #battlefield { display: none; justify-content: center; gap: 15px; flex: 1; padding: 0 10px; flex-wrap: wrap; align-items: flex-start; }
+
+        .players-1 .player-zone { max-width: 800px; width: 100%; }
+        .players-2 .player-zone { max-width: 48%; width: 100%; }
+        .players-3 .player-zone { max-width: 32%; width: 100%; }
+        .players-4 .player-zone { max-width: 24%; min-width: 240px; width: 100%; }
+
+        .player-zone { 
+            flex: 1; 
+            background-color: rgba(30, 41, 59, 0.8); 
+            border: 4px solid #475569; 
+            border-radius: 15px; 
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-sizing: border-box;
+            transition: background-color 0.2s;
+        }
+
+        .player-title { font-size: 22px; font-weight: bold; color: #fcd34d; margin-bottom: 5px; }
+        
+        .connect-area { margin-bottom: 10px; }
+        .btn-connect { background-color: #3b82f6; padding: 6px 12px; font-size: 15px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s; }
+        .btn-connect:hover { background-color: #2563eb; }
+        .btn-connect:disabled { background-color: #64748b; cursor: not-allowed; }
+        .status-text { display: block; font-size: 13px; margin-top: 4px; color: #f87171; font-weight: bold; }
+
+        .stage { 
+            width: 100%; 
+            aspect-ratio: 16 / 9; 
+            background-color: #000; 
+            position: relative; 
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden; 
+            cursor: pointer;
+        }
+
+        .char-video { 
+            width: 100%; 
+            height: 100%;
+            display: block;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .stage-score-overlay {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-weight: 900;
+            color: #f9d71c;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8), 2px 2px 0 #d97706, -1px -1px 0 #d97706;
+            z-index: 10;
+            pointer-events: none;
+            line-height: 1;
+        }
+
+        .players-1 .stage-score-overlay { font-size: 128px; }
+        .players-2 .stage-score-overlay { font-size: 96px; }
+        .players-3 .stage-score-overlay { font-size: 72px; }
+        .players-4 .stage-score-overlay { font-size: 56px; }
+
+        /* 爆擊符號：紅色，位置設定在右方 55%、下方 60% */
+        .impact-effect {
+             position: absolute; 
+             top: 60%; 
+             left: 55%; 
+             color: #ef4444; 
+             text-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+             opacity: 0; 
+             z-index: 10; 
+             pointer-events: none;
+             /* 為了不被動畫覆蓋，這裡不寫 transform，全交給 @keyframes 處理 */
+        }
+
+        .players-1 .impact-effect { font-size: 8vw; }
+        .players-2 .impact-effect { font-size: 5vw; }
+        .players-3 .impact-effect { font-size: 4vw; }
+        .players-4 .impact-effect { font-size: 3vw; }
+
+        .score-board { font-size: 18px; font-weight: bold; color: #f8fafc; margin: 5px 0; }
+        
+        .trophy-case { 
+            width: 100%; min-height: 60px; background-color: rgba(255,255,255,0.1); 
+            border: 2px dashed #94a3b8; 
+            border-radius: 10px; padding: 5px; display: flex; flex-wrap: wrap; gap: 5px; 
+            justify-content: center; align-items: center; align-content: flex-start;
+            box-sizing: border-box;
+        }
+
+        /* 舞台中央跳出的動畫樹木 */
+        .tree-drop-anim {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            height: 60px;
+            z-index: 100;
+            animation: popAndDrop 1.4s ease-in-out forwards;
+            pointer-events: none;
+        }
+
+        /* 底部收集區的靜態小樹 */
+        .mini-tree { 
+            height: 45px; 
+            object-fit: contain; 
+            position: relative;
+            z-index: 50;
+            animation: popIn 0.3s ease-out forwards; 
+        }
+
+        .show-impact { animation: powEffect 0.3s ease-out; }
+        .hit-flash { animation: flashBg 0.2s ease-out; }
+        
+        @keyframes flashBg { 0% { background-color: rgba(30, 41, 59, 0.8); } 30% { background-color: #fef08a; box-shadow: inset 0 0 50px #eab308; } 100% { background-color: rgba(30, 41, 59, 0.8); } }
+        
+        /* 確保每個階段都帶有位移設定 (translate)，才不會跑回正中央 */
+        @keyframes powEffect { 
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.4) rotate(15deg); } 
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); } 
+        }
+        
+        /* 樹木在舞台正中央 50% 處放大停留，接著縮小掉落 */
+        @keyframes popAndDrop {
+            0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            15%  { transform: translate(-50%, -50%) scale(5); opacity: 1; }
+            60%  { transform: translate(-50%, -50%) scale(5); opacity: 1; }
+            80%  { transform: translate(-50%, 50px) scale(2); opacity: 1; }
+            100% { transform: translate(-50%, 150px) scale(0.5); opacity: 0; }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        footer { margin-top: 20px; padding: 5px; font-size: 12px; color: #94a3b8; border-top: 1px solid #475569;}
+        .time-info { margin-top: 5px; font-size: 12px; color: #94a3b8; font-weight: normal; }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <img src="wg.png" class="header-icon" alt="吳剛" onerror="this.src='wg.jpg'; if(this.onerror) {this.onerror=null; this.src='https://placehold.co/80x80/000/fff?text=剛'};">
+        <h1>吳剛伐木</h1>
+        <img src="wgtree.png" class="header-icon" alt="樹木" onerror="this.src='wgtree.jpg'; if(this.onerror) {this.onerror=null; this.src='https://placehold.co/80x80/000/fff?text=樹'};">
+    </div>
+    
+    <div id="topControls">
+        <span class="control-label">選擇遊戲人數：</span>
+        <button class="mode-btn" id="mode-1" onclick="setPlayerCount(1)">1人</button>
+        <button class="mode-btn" id="mode-2" onclick="setPlayerCount(2)">2人</button>
+        <button class="mode-btn" id="mode-3" onclick="setPlayerCount(3)">3人</button>
+        <button class="mode-btn active" id="mode-4" onclick="setPlayerCount(4)">4人</button>
+        <button id="restartBtn" onclick="resetAll()">🔄 重新開始</button>
+    </div>
+
+    <div style="display:none;">
+        <audio id="snd-global-hit" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" preload="auto"></audio>
+        <audio id="snd-cheer" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
+        <audio id="snd-reward" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto"></audio>
+    </div>
+
+    <div id="battlefield">
+        <!-- 玩家 1 -->
+        <div class="player-zone" id="zone-1">
+            <div class="player-title">🟢 玩家 1</div>
+            <div class="connect-area">
+                <button class="btn-connect" id="btn-conn-1" onclick="connectDevice(1)">連線 1 號斧頭</button>
+                <span class="status-text" id="status-1">未連線</span>
+            </div>
+            <div class="stage" id="stage-1" onclick="simulateAttack(1)">
+                <div class="stage-score-overlay" id="stage-score-1">0</div>
+                <div class="impact-effect" id="impact-1">⭕</div>
+                <video id="ws-vid-1" class="char-video" preload="auto" playsinline muted>
+                    <source src="wg.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="score-board">砍伐次數：<span id="score-1">0</span> / 30</div>
+            <div class="trophy-case" id="trophy-1"></div>
+        </div>
+
+        <!-- 玩家 2 -->
+        <div class="player-zone" id="zone-2">
+            <div class="player-title">🟡 玩家 2</div>
+            <div class="connect-area">
+                <button class="btn-connect" id="btn-conn-2" onclick="connectDevice(2)">連線 2 號斧頭</button>
+                <span class="status-text" id="status-2">未連線</span>
+            </div>
+            <div class="stage" id="stage-2" onclick="simulateAttack(2)">
+                <div class="stage-score-overlay" id="stage-score-2">0</div>
+                <div class="impact-effect" id="impact-2">⭕</div>
+                <video id="ws-vid-2" class="char-video" preload="auto" playsinline muted>
+                    <source src="wg.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="score-board">砍伐次數：<span id="score-2">0</span> / 30</div>
+            <div class="trophy-case" id="trophy-2"></div>
+        </div>
+
+        <!-- 玩家 3 -->
+        <div class="player-zone" id="zone-3">
+            <div class="player-title">🔴 玩家 3</div>
+            <div class="connect-area">
+                <button class="btn-connect" id="btn-conn-3" onclick="connectDevice(3)">連線 3 號斧頭</button>
+                <span class="status-text" id="status-3">未連線</span>
+            </div>
+            <div class="stage" id="stage-3" onclick="simulateAttack(3)">
+                <div class="stage-score-overlay" id="stage-score-3">0</div>
+                <div class="impact-effect" id="impact-3">⭕</div>
+                <video id="ws-vid-3" class="char-video" preload="auto" playsinline muted>
+                    <source src="wg.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="score-board">砍伐次數：<span id="score-3">0</span> / 30</div>
+            <div class="trophy-case" id="trophy-3"></div>
+        </div>
+
+        <!-- 玩家 4 -->
+        <div class="player-zone" id="zone-4">
+            <div class="player-title">🔵 玩家 4</div>
+            <div class="connect-area">
+                <button class="btn-connect" id="btn-conn-4" onclick="connectDevice(4)">連線 4 號斧頭</button>
+                <span class="status-text" id="status-4">未連線</span>
+            </div>
+            <div class="stage" id="stage-4" onclick="simulateAttack(4)">
+                <div class="stage-score-overlay" id="stage-score-4">0</div>
+                <div class="impact-effect" id="impact-4">⭕</div>
+                <video id="ws-vid-4" class="char-video" preload="auto" playsinline muted>
+                    <source src="wg.mp4" type="video/mp4">
+                </video>
+            </div>
+            <div class="score-board">砍伐次數：<span id="score-4">0</span> / 30</div>
+            <div class="trophy-case" id="trophy-4"></div>
+        </div>
+    </div>
+
+    <footer>Taoyuan City Jianguo Junior High School Teacher Chan Chih Chieh (2026)</footer>
+    <div id="timeDisplay" class="time-info"></div>
+
+    <script>
+        const UART_SERVICE_UUID = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+        const TX_CHARACTERISTIC_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+
+        const maxScore = 30; // 收集滿 6 顆樹
+        let gameEnded = false;
+        let audioUnlocked = false;
+        let currentPlayers = 0; 
+        
+        const players = {
+            1: { score: 0, device: null, server: null, buffer: "", isAttacking: false },
+            2: { score: 0, device: null, server: null, buffer: "", isAttacking: false },
+            3: { score: 0, device: null, server: null, buffer: "", isAttacking: false },
+            4: { score: 0, device: null, server: null, buffer: "", isAttacking: false }
+        };
+
+        window.onload = () => {
+            updateGeneratedTime();
+            // 監聽載入事件來顯示 0.1 秒處的首幀畫面
+            for(let i=1; i<=4; i++){
+                const vid = document.getElementById(`ws-vid-${i}`);
+                if(vid) {
+                    vid.addEventListener('loadedmetadata', () => {
+                        vid.currentTime = 0.1;
+                    });
+                }
+            }
+        };
+
+        document.addEventListener('keydown', function(event) {
+            if (event.repeat) return;
+
+            if (!audioUnlocked) {
+                unlockAudio();
+            }
+
+            if (currentPlayers === 0) {
+                setPlayerCount(4);
+            }
+
+            switch(event.code) {
+                case 'KeyA': simulateAttack(1); break;
+                case 'KeyS': simulateAttack(2); break;
+                case 'KeyD': simulateAttack(3); break;
+                case 'KeyF': simulateAttack(4); break;
+            }
+        });
+
+        function updateGeneratedTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            document.getElementById('timeDisplay').innerText = `最後修改：${year}-${month}-${date} ${hours}:${minutes}:${seconds} (完善 30 分影片循環與舞台中心樹木掉落動畫)`;
+        }
+
+        function setPlayerCount(num, doUnlock = true) {
+            currentPlayers = num;
+            if(doUnlock) unlockAudio();
+
+            const battlefield = document.getElementById('battlefield');
+            battlefield.style.display = 'flex';
+            battlefield.className = `players-${num}`;
+
+            for(let i=1; i<=4; i++) {
+                const btn = document.getElementById(`mode-${i}`);
+                if(i === num) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+                
+                const zone = document.getElementById(`zone-${i}`);
+                if(i <= num) {
+                    zone.style.display = 'flex';
+                } else {
+                    zone.style.display = 'none';
+                }
+            }
+            resetAll(); 
+        }
+
+        function unlockAudio() {
+            if(audioUnlocked) return;
+            const snd = document.getElementById('snd-global-hit');
+            snd.volume = 0;
+            snd.play().then(() => { snd.pause(); snd.currentTime = 0; snd.volume = 1.0; }).catch(e => {});
+            
+            const cheer = document.getElementById('snd-cheer');
+            cheer.volume = 0;
+            cheer.play().then(() => { cheer.pause(); cheer.currentTime = 0; cheer.volume = 1.0; }).catch(e => {});
+
+            const rewardSnd = document.getElementById('snd-reward');
+            rewardSnd.volume = 0;
+            rewardSnd.play().then(() => { rewardSnd.pause(); rewardSnd.currentTime = 0; rewardSnd.volume = 1.0; }).catch(e => {});
+
+            for(let i=1; i<=4; i++){
+                const vid = document.getElementById(`ws-vid-${i}`);
+                if(vid) vid.muted = false;
+            }
+
+            audioUnlocked = true;
+        }
+
+        async function connectDevice(playerId) {
+            const btn = document.getElementById(`btn-conn-${playerId}`);
+            const status = document.getElementById(`status-${playerId}`);
+            try {
+                status.innerText = "搜尋裝置中..."; status.style.color = "#fbbf24";
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'BBC micro:bit' }],
+                    optionalServices: [UART_SERVICE_UUID]
+                });
+                players[playerId].device = device;
+                device.addEventListener('gattserverdisconnected', () => handleDisconnect(playerId));
+
+                status.innerText = "連線中...";
+                const server = await device.gatt.connect();
+                players[playerId].server = server;
+                
+                const service = await server.getPrimaryService(UART_SERVICE_UUID);
+                const characteristic = await service.getCharacteristic(TX_CHARACTERISTIC_UUID);
+                
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', (e) => handleData(e, playerId));
+                
+                btn.innerText = "🟢 已連線";
+                btn.disabled = true;
+                status.innerText = "連線穩定";
+                status.style.color = "#4ade80";
+            } catch (error) {
+                console.error(`玩家 ${playerId} 連線失敗`, error);
+                status.innerText = "連線失敗";
+                status.style.color = "#f87171";
+            }
+        }
+
+        function handleDisconnect(playerId) {
+            const btn = document.getElementById(`btn-conn-${playerId}`);
+            const status = document.getElementById(`status-${playerId}`);
+            btn.innerText = `連線 ${playerId} 號斧頭`;
+            btn.disabled = false;
+            status.innerText = "已斷線";
+            status.style.color = "#f87171";
+            players[playerId].device = null;
+            players[playerId].server = null;
+        }
+
+        function handleData(event, playerId) {
+            if (gameEnded || playerId > currentPlayers) return;
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            players[playerId].buffer += decoder.decode(value);
+
+            if (players[playerId].buffer.includes('\n')) {
+                const lines = players[playerId].buffer.split('\n');
+                const latestData = lines[lines.length - 2].trim();
+                players[playerId].buffer = lines[lines.length - 1];
+
+                if (latestData === "HIT") {
+                    executeAttack(playerId);
+                }
+            }
+        }
+
+        function simulateAttack(playerId) {
+            if(!audioUnlocked) unlockAudio();
+            if(!gameEnded && playerId <= currentPlayers) executeAttack(playerId);
+        }
+
+        function executeAttack(playerId) {
+            const p = players[playerId];
+            if (p.isAttacking || gameEnded) return;
+            p.isAttacking = true;
+
+            // 判斷是否為最後決定勝負的一擊 (達30分)
+            const isWinningHit = (p.score + 1 >= maxScore);
+
+            if(audioUnlocked) {
+                setTimeout(() => {
+                    const globalSnd = document.getElementById('snd-global-hit');
+                    const clonedSnd1 = globalSnd.cloneNode(); 
+                    clonedSnd1.volume = 1.0;
+                    clonedSnd1.playbackRate = 0.6; 
+                    clonedSnd1.play().catch(e => console.log(e));
+                    
+                    const clonedSnd2 = globalSnd.cloneNode(); 
+                    clonedSnd2.volume = 1.0;
+                    clonedSnd2.playbackRate = 0.6; 
+                    clonedSnd2.play().catch(e => console.log(e));
+                    
+                    setTimeout(() => {
+                        clonedSnd1.pause();
+                        clonedSnd1.currentTime = 0;
+                        clonedSnd2.pause();
+                        clonedSnd2.currentTime = 0;
+                    }, 200);
+                }, 200);
+            }
+
+            const wsVid = document.getElementById(`ws-vid-${playerId}`);
+            const cycleIndex = p.score % 5;
+            const startTime = cycleIndex * 1.5;
+            const endTime = startTime + 1.5;
+
+            // 若為勝利一擊，開啟影片自動循環屬性，並設定保險事件確保無限播放
+            if (isWinningHit) {
+                wsVid.loop = true;
+                wsVid.onended = () => { if (gameEnded) wsVid.play().catch(e => console.log(e)); };
+            }
+
+            wsVid.currentTime = startTime;
+            wsVid.play().catch(e => {
+                console.log("影片播放被阻擋", e);
+                p.isAttacking = false;
+            });
+
+            const checkTime = () => {
+                if (wsVid.currentTime >= endTime) {
+                    // 只有「不是勝利的一擊」時，才強制暫停
+                    if (!isWinningHit) {
+                        wsVid.pause();
+                        if (cycleIndex === 4) {
+                            wsVid.currentTime = 0.1;
+                        }
+                    }
+                    p.isAttacking = false;
+                    clearTimeout(failsafeUnlock);
+                } else if (p.isAttacking) {
+                    requestAnimationFrame(checkTime);
+                }
+            };
+            requestAnimationFrame(checkTime);
+
+            const failsafeUnlock = setTimeout(() => {
+                p.isAttacking = false;
+                // 同樣，勝利時絕不暫停
+                if (!isWinningHit) wsVid.pause();
+            }, 1800);
+
+            // 視覺動畫與計分處理
+            setTimeout(() => {
+                const zone = document.getElementById(`zone-${playerId}`);
+                zone.classList.add('hit-flash');
+                document.getElementById(`impact-${playerId}`).classList.add('show-impact');
+
+                setTimeout(() => {
+                    zone.classList.remove('hit-flash');
+                    document.getElementById(`impact-${playerId}`).classList.remove('show-impact');
+                }, 350);
+
+                p.score++;
+                
+                document.getElementById(`stage-score-${playerId}`).innerText = p.score;
+                document.getElementById(`score-${playerId}`).innerText = p.score;
+                
+                // 每達到 5 的倍數，發放一顆桂樹 (最高到30次)
+                if (p.score % 5 === 0 && p.score <= 30) {
+                    
+                    // 等待影片播放 1.5 秒 (前置100ms已過，再等1400ms = 1.5秒) 後，觸發掉落動畫
+                    setTimeout(() => {
+                        if (audioUnlocked) {
+                            const rewardSnd = document.getElementById('snd-reward');
+                            const clonedRewardSnd = rewardSnd.cloneNode();
+                            clonedRewardSnd.volume = 1.0;
+                            clonedRewardSnd.play().catch(e => console.log(e));
+                        }
+
+                        // 1. 在舞台正中央產生動畫桂樹 (top: 50%, left: 50%)
+                        const stage = document.getElementById(`stage-${playerId}`);
+                        const animTree = document.createElement('img');
+                        animTree.src = 'wgtree.png';
+                        animTree.className = 'tree-drop-anim';
+                        animTree.onerror = function() { this.style.display='none'; };
+                        stage.appendChild(animTree);
+
+                        // 2. 等待動畫 1.4 秒結束後，移除動畫樹，將靜態樹加入下方的收集區
+                        setTimeout(() => {
+                            animTree.remove();
+
+                            const trophy = document.createElement('img');
+                            trophy.src = 'wgtree.png';
+                            trophy.className = 'mini-tree';
+                            trophy.onerror = function() { this.style.display='none'; };
+                            document.getElementById(`trophy-${playerId}`).appendChild(trophy);
+
+                            // 等樹木成功進入收集區後，如果是最後一下 (30分)，宣告勝利灑彩帶
+                            if (p.score >= maxScore && !gameEnded) {
+                                declareWinner(playerId);
+                            }
+                        }, 1400);
+
+                    }, 1400);
+
+                } else {
+                    // 若未達5的倍數但已滿分(防呆安全機制)
+                    if (p.score >= maxScore && !gameEnded) {
+                        declareWinner(playerId);
+                    }
+                }
+                
+            }, 100); 
+        }
+
+        function declareWinner(playerId) {
+            gameEnded = true;
+            if(audioUnlocked) {
+                const cheer = document.getElementById('snd-cheer');
+                cheer.currentTime = 0;
+                cheer.play().catch(e => console.log(e));
+            }
+
+            const stageScore = document.getElementById(`stage-score-${playerId}`);
+            stageScore.innerHTML = "🏆<br>" + stageScore.innerText;
+            stageScore.style.fontSize = "50px";
+            stageScore.style.textAlign = "center";
+            stageScore.style.width = "100%";
+            stageScore.style.left = "0";
+
+            var duration = 4000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+              var timeLeft = animationEnd - Date.now();
+              if (timeLeft <= 0) return clearInterval(interval);
+
+              var particleCount = 50 * (timeLeft / duration);
+              confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+              confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+        function resetAll() {
+            gameEnded = false;
+            if (currentPlayers === 0) return;
+
+            for(let i=1; i<=4; i++) {
+                players[i].score = 0;
+                players[i].isAttacking = false;
+                
+                document.getElementById(`score-${i}`).innerText = '0';
+                
+                const stageScore = document.getElementById(`stage-score-${i}`);
+                if (stageScore) {
+                    stageScore.innerText = '0';
+                    stageScore.style.fontSize = ""; 
+                    stageScore.style.textAlign = "";
+                    stageScore.style.width = "";
+                    stageScore.style.left = "15px";
+                }
+                
+                document.getElementById(`trophy-${i}`).innerHTML = '';
+                
+                const stage = document.getElementById(`stage-${i}`);
+                if (stage) {
+                    const animTrees = stage.querySelectorAll('.tree-drop-anim');
+                    animTrees.forEach(t => t.remove());
+                }
+
+                const wsVid = document.getElementById(`ws-vid-${i}`);
+                if (wsVid) {
+                    wsVid.loop = false;
+                    wsVid.onended = null;
+                    wsVid.pause();
+                    wsVid.currentTime = 0.1;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
