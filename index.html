@@ -500,7 +500,6 @@
 
             const checkTime = () => {
                 if (wsVid.currentTime >= endTime) {
-                    // 只有「不是勝利的一擊」時，才強制暫停
                     if (!isWinningHit) {
                         wsVid.pause();
                         if (cycleIndex === 4) {
@@ -515,11 +514,12 @@
             };
             requestAnimationFrame(checkTime);
 
+            // 延長防呆解鎖時間：多人連線同時觸發時，瀏覽器同時解碼 4 支影片會導致影片時間軸稍微延遲。
+            // 將原本嚴格的 1.8 秒限制延長至 4.0 秒，確保影片有充分時間播完而不被強制切斷。
             const failsafeUnlock = setTimeout(() => {
                 p.isAttacking = false;
-                // 同樣，勝利時絕不暫停
                 if (!isWinningHit) wsVid.pause();
-            }, 1800);
+            }, 4000);
 
             // 視覺動畫與計分處理
             setTimeout(() => {
