@@ -9,8 +9,7 @@
         body { 
             font-family: 'Microsoft JhengHei', sans-serif; 
             text-align: center; 
-            /* 更換為較亮的藍色背景 */
-            background-color: #46739B;            
+            background-color: #46739B; /* 天空藍背景 */
             color: #f8fafc;
             margin: 0; 
             padding: 10px; 
@@ -55,13 +54,21 @@
             transition: background-color 0.2s;
         }
 
-        .player-title { font-size: 22px; font-weight: bold; color: #fcd34d; margin-bottom: 5px; }
+        .player-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        .player-circle { width: 18px; height: 18px; border-radius: 50%; display: inline-block; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3); }
+        .player-title { font-size: 22px; font-weight: bold; color: #fcd34d; margin: 0; }
         
         .connect-area { margin-bottom: 10px; }
-        .btn-connect { background-color: #3b82f6; padding: 6px 12px; font-size: 15px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background 0.3s; }
-        .btn-connect:hover { background-color: #2563eb; }
-        .btn-connect:disabled { background-color: #64748b; cursor: not-allowed; }
+        .btn-connect { padding: 6px 12px; font-size: 15px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; transition: filter 0.3s; }
+        .btn-connect:hover { filter: brightness(1.2); }
+        .btn-connect:disabled { filter: grayscale(50%) opacity(0.8); cursor: not-allowed; }
         .status-text { display: block; font-size: 13px; margin-top: 4px; color: #f87171; font-weight: bold; }
+
+        /* 玩家專屬色彩 (深紅、青、中藍、橘) */
+        .color-p1 { background-color: #DC143C; }
+        .color-p2 { background-color: #008080; }
+        .color-p3 { background-color: #0000CD; }
+        .color-p4 { background-color: #FFA500; }
 
         .stage { 
             width: 100%; 
@@ -99,7 +106,6 @@
         .players-3 .stage-score-overlay { font-size: 72px; }
         .players-4 .stage-score-overlay { font-size: 56px; }
 
-        /* 爆擊符號：紅色，位置設定在右方 55%、下方 60% */
         .impact-effect {
              position: absolute; 
              top: 60%; 
@@ -109,7 +115,6 @@
              opacity: 0; 
              z-index: 10; 
              pointer-events: none;
-             /* 為了不被動畫覆蓋，這裡不寫 transform，全交給 @keyframes 處理 */
         }
 
         .players-1 .impact-effect { font-size: 8vw; }
@@ -127,7 +132,6 @@
             box-sizing: border-box;
         }
 
-        /* 舞台中央跳出的動畫樹木 */
         .tree-drop-anim {
             position: absolute;
             top: 50%;
@@ -138,7 +142,6 @@
             pointer-events: none;
         }
 
-        /* 底部收集區的靜態小樹 */
         .mini-tree { 
             height: 45px; 
             object-fit: contain; 
@@ -152,14 +155,12 @@
         
         @keyframes flashBg { 0% { background-color: rgba(30, 41, 59, 0.8); } 30% { background-color: #fef08a; box-shadow: inset 0 0 50px #eab308; } 100% { background-color: rgba(30, 41, 59, 0.8); } }
         
-        /* 確保每個階段都帶有位移設定 (translate)，才不會跑回正中央 */
         @keyframes powEffect { 
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.4) rotate(15deg); } 
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); } 
+            0% { opacity: 0; top: 60%; left: 55%; transform: translate(-50%, -50%) scale(0.5); } 
+            50% { opacity: 1; top: 60%; left: 55%; transform: translate(-50%, -50%) scale(1.4) rotate(15deg); } 
+            100% { opacity: 0; top: 60%; left: 55%; transform: translate(-50%, -50%) scale(1.8); } 
         }
         
-        /* 樹木在舞台正中央 50% 處放大停留，接著縮小掉落 */
         @keyframes popAndDrop {
             0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
             15%  { transform: translate(-50%, -50%) scale(5); opacity: 1; }
@@ -180,7 +181,7 @@
 <body>
 
     <div class="header-container">
-        <img src="wg.png" class="header-icon" alt="吳剛" onerror="this.src='wg.jpg'; if(this.onerror) {this.onerror=null; this.src='https://placehold.co/80x80/000/fff?text=剛'};">
+        <img src="wg.png" class="header-icon" alt="吳剛" onerror="this.src='https://placehold.co/80x80/000/fff?text=剛';">
         <h1>吳剛伐木</h1>
         <img src="wgtree.png" class="header-icon" alt="樹木" onerror="this.src='wgtree.jpg'; if(this.onerror) {this.onerror=null; this.src='https://placehold.co/80x80/000/fff?text=樹'};">
     </div>
@@ -203,9 +204,12 @@
     <div id="battlefield">
         <!-- 玩家 1 -->
         <div class="player-zone" id="zone-1">
-            <div class="player-title">🟢 玩家 1</div>
+            <div class="player-header">
+                <div class="player-circle color-p1"></div>
+                <div class="player-title">玩家 1</div>
+            </div>
             <div class="connect-area">
-                <button class="btn-connect" id="btn-conn-1" onclick="connectDevice(1)">連線 1 號斧頭</button>
+                <button class="btn-connect color-p1" id="btn-conn-1" onclick="connectDevice(1)">連線 1 號斧頭</button>
                 <span class="status-text" id="status-1">未連線</span>
             </div>
             <div class="stage" id="stage-1" onclick="simulateAttack(1)">
@@ -221,9 +225,12 @@
 
         <!-- 玩家 2 -->
         <div class="player-zone" id="zone-2">
-            <div class="player-title">🟡 玩家 2</div>
+            <div class="player-header">
+                <div class="player-circle color-p2"></div>
+                <div class="player-title">玩家 2</div>
+            </div>
             <div class="connect-area">
-                <button class="btn-connect" id="btn-conn-2" onclick="connectDevice(2)">連線 2 號斧頭</button>
+                <button class="btn-connect color-p2" id="btn-conn-2" onclick="connectDevice(2)">連線 2 號斧頭</button>
                 <span class="status-text" id="status-2">未連線</span>
             </div>
             <div class="stage" id="stage-2" onclick="simulateAttack(2)">
@@ -239,9 +246,12 @@
 
         <!-- 玩家 3 -->
         <div class="player-zone" id="zone-3">
-            <div class="player-title">🔴 玩家 3</div>
+            <div class="player-header">
+                <div class="player-circle color-p3"></div>
+                <div class="player-title">玩家 3</div>
+            </div>
             <div class="connect-area">
-                <button class="btn-connect" id="btn-conn-3" onclick="connectDevice(3)">連線 3 號斧頭</button>
+                <button class="btn-connect color-p3" id="btn-conn-3" onclick="connectDevice(3)">連線 3 號斧頭</button>
                 <span class="status-text" id="status-3">未連線</span>
             </div>
             <div class="stage" id="stage-3" onclick="simulateAttack(3)">
@@ -257,9 +267,12 @@
 
         <!-- 玩家 4 -->
         <div class="player-zone" id="zone-4">
-            <div class="player-title">🔵 玩家 4</div>
+            <div class="player-header">
+                <div class="player-circle color-p4"></div>
+                <div class="player-title">玩家 4</div>
+            </div>
             <div class="connect-area">
-                <button class="btn-connect" id="btn-conn-4" onclick="connectDevice(4)">連線 4 號斧頭</button>
+                <button class="btn-connect color-p4" id="btn-conn-4" onclick="connectDevice(4)">連線 4 號斧頭</button>
                 <span class="status-text" id="status-4">未連線</span>
             </div>
             <div class="stage" id="stage-4" onclick="simulateAttack(4)">
@@ -295,7 +308,6 @@
 
         window.onload = () => {
             updateGeneratedTime();
-            // 監聽載入事件來顯示 0.1 秒處的首幀畫面
             for(let i=1; i<=4; i++){
                 const vid = document.getElementById(`ws-vid-${i}`);
                 if(vid) {
@@ -308,14 +320,8 @@
 
         document.addEventListener('keydown', function(event) {
             if (event.repeat) return;
-
-            if (!audioUnlocked) {
-                unlockAudio();
-            }
-
-            if (currentPlayers === 0) {
-                setPlayerCount(4);
-            }
+            if (!audioUnlocked) unlockAudio();
+            if (currentPlayers === 0) setPlayerCount(4);
 
             switch(event.code) {
                 case 'KeyA': simulateAttack(1); break;
@@ -327,14 +333,8 @@
 
         function updateGeneratedTime() {
             const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const date = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            
-            document.getElementById('timeDisplay').innerText = `最後修改：${year}-${month}-${date} ${hours}:${minutes}:${seconds} (完善 30 分影片循環與舞台中心樹木掉落動畫)`;
+            const timeString = now.toLocaleString('zh-TW', { hour12: false });
+            document.getElementById('timeDisplay').innerText = `最後修改：${timeString} (統整完整版，修復所有細節)`;
         }
 
         function setPlayerCount(num, doUnlock = true) {
@@ -347,18 +347,12 @@
 
             for(let i=1; i<=4; i++) {
                 const btn = document.getElementById(`mode-${i}`);
-                if(i === num) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
+                if(i === num) btn.classList.add('active');
+                else btn.classList.remove('active');
                 
                 const zone = document.getElementById(`zone-${i}`);
-                if(i <= num) {
-                    zone.style.display = 'flex';
-                } else {
-                    zone.style.display = 'none';
-                }
+                if(i <= num) zone.style.display = 'flex';
+                else zone.style.display = 'none';
             }
             resetAll(); 
         }
@@ -381,7 +375,6 @@
                 const vid = document.getElementById(`ws-vid-${i}`);
                 if(vid) vid.muted = false;
             }
-
             audioUnlocked = true;
         }
 
@@ -407,7 +400,7 @@
                 await characteristic.startNotifications();
                 characteristic.addEventListener('characteristicvaluechanged', (e) => handleData(e, playerId));
                 
-                btn.innerText = "🟢 已連線";
+                btn.innerHTML = "✔️ 已連線";
                 btn.disabled = true;
                 status.innerText = "連線穩定";
                 status.style.color = "#4ade80";
@@ -456,7 +449,6 @@
             if (p.isAttacking || gameEnded) return;
             p.isAttacking = true;
 
-            // 判斷是否為最後決定勝負的一擊 (達30分)
             const isWinningHit = (p.score + 1 >= maxScore);
 
             if(audioUnlocked) {
@@ -473,10 +465,8 @@
                     clonedSnd2.play().catch(e => console.log(e));
                     
                     setTimeout(() => {
-                        clonedSnd1.pause();
-                        clonedSnd1.currentTime = 0;
-                        clonedSnd2.pause();
-                        clonedSnd2.currentTime = 0;
+                        clonedSnd1.pause(); clonedSnd1.currentTime = 0;
+                        clonedSnd2.pause(); clonedSnd2.currentTime = 0;
                     }, 200);
                 }, 200);
             }
@@ -486,7 +476,7 @@
             const startTime = cycleIndex * 1.5;
             const endTime = startTime + 1.5;
 
-            // 若為勝利一擊，開啟影片自動循環屬性，並設定保險事件確保無限播放
+            // 確保勝利時影片會無限循環
             if (isWinningHit) {
                 wsVid.loop = true;
                 wsVid.onended = () => { if (gameEnded) wsVid.play().catch(e => console.log(e)); };
@@ -499,12 +489,10 @@
             });
 
             const checkTime = () => {
-                if (wsVid.currentTime >= endTime) {
-                    if (!isWinningHit) {
-                        wsVid.pause();
-                        if (cycleIndex === 4) {
-                            wsVid.currentTime = 0.1;
-                        }
+                if (wsVid.currentTime >= endTime && !isWinningHit) {
+                    wsVid.pause();
+                    if (cycleIndex === 4) {
+                        wsVid.currentTime = 0.1;
                     }
                     p.isAttacking = false;
                     clearTimeout(failsafeUnlock);
@@ -514,14 +502,14 @@
             };
             requestAnimationFrame(checkTime);
 
-            // 延長防呆解鎖時間：多人連線同時觸發時，瀏覽器同時解碼 4 支影片會導致影片時間軸稍微延遲。
-            // 將原本嚴格的 1.8 秒限制延長至 4.0 秒，確保影片有充分時間播完而不被強制切斷。
+            // 延長至 4000 毫秒的寬容防呆，防止多人同時運算導致卡頓被提前暫停
             const failsafeUnlock = setTimeout(() => {
-                p.isAttacking = false;
-                if (!isWinningHit) wsVid.pause();
+                if (!isWinningHit) {
+                    p.isAttacking = false;
+                    wsVid.pause();
+                }
             }, 4000);
 
-            // 視覺動畫與計分處理
             setTimeout(() => {
                 const zone = document.getElementById(`zone-${playerId}`);
                 zone.classList.add('hit-flash');
@@ -533,14 +521,10 @@
                 }, 350);
 
                 p.score++;
-                
                 document.getElementById(`stage-score-${playerId}`).innerText = p.score;
                 document.getElementById(`score-${playerId}`).innerText = p.score;
                 
-                // 每達到 5 的倍數，發放一顆桂樹 (最高到30次)
                 if (p.score % 5 === 0 && p.score <= 30) {
-                    
-                    // 等待影片播放 1.5 秒 (前置100ms已過，再等1400ms = 1.5秒) 後，觸發掉落動畫
                     setTimeout(() => {
                         if (audioUnlocked) {
                             const rewardSnd = document.getElementById('snd-reward');
@@ -549,7 +533,6 @@
                             clonedRewardSnd.play().catch(e => console.log(e));
                         }
 
-                        // 1. 在舞台正中央產生動畫桂樹 (top: 50%, left: 50%)
                         const stage = document.getElementById(`stage-${playerId}`);
                         const animTree = document.createElement('img');
                         animTree.src = 'wgtree.png';
@@ -557,31 +540,24 @@
                         animTree.onerror = function() { this.style.display='none'; };
                         stage.appendChild(animTree);
 
-                        // 2. 等待動畫 1.4 秒結束後，移除動畫樹，將靜態樹加入下方的收集區
                         setTimeout(() => {
                             animTree.remove();
-
                             const trophy = document.createElement('img');
                             trophy.src = 'wgtree.png';
                             trophy.className = 'mini-tree';
                             trophy.onerror = function() { this.style.display='none'; };
                             document.getElementById(`trophy-${playerId}`).appendChild(trophy);
 
-                            // 等樹木成功進入收集區後，如果是最後一下 (30分)，宣告勝利灑彩帶
                             if (p.score >= maxScore && !gameEnded) {
                                 declareWinner(playerId);
                             }
                         }, 1400);
-
                     }, 1400);
-
                 } else {
-                    // 若未達5的倍數但已滿分(防呆安全機制)
                     if (p.score >= maxScore && !gameEnded) {
                         declareWinner(playerId);
                     }
                 }
-                
             }, 100); 
         }
 
