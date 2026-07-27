@@ -40,9 +40,15 @@
         .players-3 .player-zone { max-width: 32%; width: 100%; }
         .players-4 .player-zone { max-width: 24%; min-width: 240px; width: 100%; }
 
+        /* 新增：為不同玩家設定專屬底色變數 (對應要求中的色碼) */
+        #zone-1 { --base-bg: #DC143C; }
+        #zone-2 { --base-bg: #008080; }
+        #zone-3 { --base-bg: #0000CD; }
+        #zone-4 { --base-bg: #FFA500; }
+
         .player-zone { 
             flex: 1; 
-            background-color: rgba(30, 41, 59, 0.8); 
+            background-color: var(--base-bg, rgba(30, 41, 59, 0.8)); /* 修改為讀取各自的底色 */
             border: 4px solid #475569; 
             border-radius: 15px; 
             padding: 10px;
@@ -56,13 +62,14 @@
 
         .player-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
         .player-circle { width: 18px; height: 18px; border-radius: 50%; display: inline-block; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3); }
-        .player-title { font-size: 22px; font-weight: bold; color: #fcd34d; margin: 0; }
+        .player-title { font-size: 22px; font-weight: bold; color: #fcd34d; margin: 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
         
         .connect-area { margin-bottom: 10px; }
-        .btn-connect { padding: 6px 12px; font-size: 15px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; transition: filter 0.3s; }
+        /* 增加白色半透明邊框，避免按鈕與底色相同時隱形 */
+        .btn-connect { padding: 6px 12px; font-size: 15px; font-weight: bold; color: white; border: 2px solid rgba(255,255,255,0.4); border-radius: 8px; cursor: pointer; transition: filter 0.3s; }
         .btn-connect:hover { filter: brightness(1.2); }
         .btn-connect:disabled { filter: grayscale(50%) opacity(0.8); cursor: not-allowed; }
-        .status-text { display: block; font-size: 13px; margin-top: 4px; color: #f87171; font-weight: bold; }
+        .status-text { display: block; font-size: 13px; margin-top: 4px; color: #f87171; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
 
         /* 玩家專屬色彩 (深紅、青、中藍、橘) */
         .color-p1 { background-color: #DC143C; }
@@ -122,11 +129,11 @@
         .players-3 .impact-effect { font-size: 4vw; }
         .players-4 .impact-effect { font-size: 3vw; }
 
-        .score-board { font-size: 18px; font-weight: bold; color: #f8fafc; margin: 5px 0; }
+        .score-board { font-size: 18px; font-weight: bold; color: #f8fafc; margin: 5px 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
         
         .trophy-case { 
-            width: 100%; min-height: 60px; background-color: rgba(255,255,255,0.1); 
-            border: 2px dashed #94a3b8; 
+            width: 100%; min-height: 60px; background-color: rgba(255,255,255,0.2); 
+            border: 2px dashed #e2e8f0; 
             border-radius: 10px; padding: 5px; display: flex; flex-wrap: wrap; gap: 5px; 
             justify-content: center; align-items: center; align-content: flex-start;
             box-sizing: border-box;
@@ -153,7 +160,12 @@
         .show-impact { animation: powEffect 0.3s ease-out; }
         .hit-flash { animation: flashBg 0.2s ease-out; }
         
-        @keyframes flashBg { 0% { background-color: rgba(30, 41, 59, 0.8); } 30% { background-color: #fef08a; box-shadow: inset 0 0 50px #eab308; } 100% { background-color: rgba(30, 41, 59, 0.8); } }
+        /* 動畫修改：閃爍完畢後會回到該區塊專屬底色 */
+        @keyframes flashBg { 
+            0% { background-color: var(--base-bg); } 
+            30% { background-color: #fef08a; box-shadow: inset 0 0 50px #eab308; } 
+            100% { background-color: var(--base-bg); } 
+        }
         
         @keyframes powEffect { 
             0% { opacity: 0; top: 60%; left: 55%; transform: translate(-50%, -50%) scale(0.5); } 
@@ -174,8 +186,8 @@
             100% { transform: scale(1); }
         }
 
-        footer { margin-top: 20px; padding: 5px; font-size: 12px; color: #94a3b8; border-top: 1px solid #475569;}
-        .time-info { margin-top: 5px; font-size: 12px; color: #94a3b8; font-weight: normal; }
+        footer { margin-top: 20px; padding: 5px; font-size: 12px; color: #e2e8f0; border-top: 1px solid #94a3b8; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .time-info { margin-top: 5px; font-size: 12px; color: #e2e8f0; font-weight: normal; }
     </style>
 </head>
 <body>
@@ -202,7 +214,6 @@
     </div>
 
     <div id="battlefield">
-        <!-- 玩家 1 -->
         <div class="player-zone" id="zone-1">
             <div class="player-header">
                 <div class="player-circle color-p1"></div>
@@ -223,7 +234,6 @@
             <div class="trophy-case" id="trophy-1"></div>
         </div>
 
-        <!-- 玩家 2 -->
         <div class="player-zone" id="zone-2">
             <div class="player-header">
                 <div class="player-circle color-p2"></div>
@@ -244,7 +254,6 @@
             <div class="trophy-case" id="trophy-2"></div>
         </div>
 
-        <!-- 玩家 3 -->
         <div class="player-zone" id="zone-3">
             <div class="player-header">
                 <div class="player-circle color-p3"></div>
@@ -265,7 +274,6 @@
             <div class="trophy-case" id="trophy-3"></div>
         </div>
 
-        <!-- 玩家 4 -->
         <div class="player-zone" id="zone-4">
             <div class="player-header">
                 <div class="player-circle color-p4"></div>
@@ -334,7 +342,7 @@
         function updateGeneratedTime() {
             const now = new Date();
             const timeString = now.toLocaleString('zh-TW', { hour12: false });
-            document.getElementById('timeDisplay').innerText = `最後修改：${timeString} (統整完整版，修復所有細節)`;
+            document.getElementById('timeDisplay').innerText = `最後修改：${timeString} (統整完整版，套用自訂色彩)`;
         }
 
         function setPlayerCount(num, doUnlock = true) {
