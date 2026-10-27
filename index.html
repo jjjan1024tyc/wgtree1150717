@@ -295,7 +295,7 @@
         </div>
     </div>
 
-    <footer>Taoyuan City Jianguo Junior High School Teacher Chan Chih Chieh (2026)</footer>
+    <footer></footer>
     <div id="timeDisplay" class="time-info"></div>
 
     <script>
@@ -342,7 +342,7 @@
         function updateGeneratedTime() {
             const now = new Date();
             const timeString = now.toLocaleString('zh-TW', { hour12: false });
-            document.getElementById('timeDisplay').innerText = `最後修改：${timeString} (統整完整版，套用自訂色彩)`;
+            document.getElementById('timeDisplay').innerText = `最後修改：${timeString}`;
         }
 
         function setPlayerCount(num, doUnlock = true) {
